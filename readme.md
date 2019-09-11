@@ -1,6 +1,8 @@
 # mirror-directories
 
-## Example 1
+## Usage
+
+### Example 1
 Recursively copy all the directories matching the glob `src/*` to `out1` and `out2`:
 
 ```bash
@@ -11,7 +13,7 @@ If `src/project1` and `src/project2` exist then they will be copied to `out1/pro
 
 Existing contents of the destination directories will be erased before the copying occurs such that the destination directories will mirror the source directories exactly.
 
-## Example 1
+### Example 2
 
 Recursively copy `src1` and `src2` to all the directories matching `destinations/*`:
 
@@ -20,3 +22,21 @@ Recursively copy `src1` and `src2` to all the directories matching `destinations
 ```
 
 If `src1/cat`, `src2/dog` and `src2/friend`, `destinations/birthday` and `destinations/fear` exist then at the end `destinations/{birthday,fear}/{cat,dog,friend}` will be exact copies of the respective files in `src1` and `src2`.
+
+## API
+
+You may also use the `API` instead of the command-line utility:
+
+```typescript
+export declare function mirrorDirectories(
+  srcDirs: string[],
+  destDirs: string[],
+  options?: Options
+): Promise<void>;
+
+export declare function watchDirectoriesForChangesAndMirror(
+  srcDirs: string[],
+  destDirs: string[],
+  options?: Options
+): Promise<void>;
+```

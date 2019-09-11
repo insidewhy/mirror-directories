@@ -1,6 +1,6 @@
 {
   "name": "mirror-directories",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "mirror multiple source directories to multiple target destinations",
   "main": "lib/index.js",
   "scripts": {
@@ -19,12 +19,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "fb-watchman": "^2.0.0",
     "fs-extra": "^8.1.0",
     "glob": "^7.1.4"
   },
   "devDependencies": {
-    "@types/fb-watchman": "^2.0.0",
     "@types/fs-extra": "^8.0.0",
     "@types/glob": "^7.1.1",
     "@types/node": "^12.7.4",

@@ -5,6 +5,14 @@ import { mirrorDirectories, watchDirectoriesForChangesAndMirror } from '.'
 
 const goodGlob = util.promisify(glob)
 
+async function runGlob(path: string): Promise<string[]> {
+  const globbedDirs = await goodGlob(path)
+  if (!globbedDirs.length) {
+    throw new Error(`'${path}' does not match any directories`)
+  }
+  return globbedDirs
+}
+
 async function doMain() {
   const args = process.argv
   let watch = false
@@ -19,10 +27,10 @@ async function doMain() {
     } else if (arg === '-v' || arg === '--verbose') {
       verbose = true
     } else if (arg === '-s' || arg === '--source') {
-      const globbedDirs = await goodGlob(args[++i])
+      const globbedDirs = await runGlob(args[++i])
       srcDirs.push(...globbedDirs)
     } else if (arg === '-d' || arg === '--dest') {
-      const globbedDirs = await goodGlob(args[++i])
+      const globbedDirs = await runGlob(args[++i])
       destDirs.push(...globbedDirs)
     } else if (arg === '-h' || arg === '--help') {
       console.log(args[1] + ' [-h] [-v] [-s <dir>] [-d <dir]')

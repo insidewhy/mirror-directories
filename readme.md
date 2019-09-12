@@ -30,5 +30,8 @@ This library also exports an API:
 ```typescript
 import { mirrorDirectories } from 'mirror-directories'
 
-mirrorDirectories([ ['src1', ['dest1', 'dest2']], ['src2', ['dest2', 'dest3']] ])
+mirrorDirectories([
+  ['src1', ['dest1', 'dest2']],
+  ['src2', ['dest2', 'dest3']],
+])
 ```

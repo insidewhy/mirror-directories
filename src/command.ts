@@ -32,9 +32,11 @@ async function doMain() {
     }
   }
 
-  await mirrorDirectories(srcDirs, destDirs, { verbose })
+  const syncs = srcDirs.map(srcDir => [srcDir, destDirs] as const)
+
+  await mirrorDirectories(syncs, { verbose })
   if (watch) {
-    await watchDirectoriesForChangesAndMirror(srcDirs, destDirs, { verbose })
+    await watchDirectoriesForChangesAndMirror(syncs, { verbose })
   }
 }
 
@@ -47,4 +49,3 @@ export async function main() {
     process.exit(1)
   }
 }
-

@@ -5,38 +5,33 @@ interface Options {
   verbose?: boolean
 }
 
+// each sync is a pair of source and destination
+type Synchronisations = Array<readonly [string, string[]]>
+
 export async function mirrorDirectories(
-  srcDirs: string[],
-  destDirs: string[],
+  syncs: Synchronisations,
   options: Options = {},
 ): Promise<void> {
-  if (!srcDirs.length) throw new Error('Must supply at least one source directory')
-  if (!destDirs.length) throw new Error('Must supply at least one destination directory')
-
-  if (options.verbose) {
-    console.log('Copying %O to %O', srcDirs, destDirs)
-  }
+  if (!syncs.length) throw new Error('Must supply at least one copy')
 
   // delete contents of dest directories
-  await Promise.all(destDirs.map(destDir => emptyDir(destDir)))
+  await Promise.all(syncs.map(sync => Promise.all(sync[1].map(destDir => emptyDir(destDir)))))
 
   // copy source directories into dest directories
   await Promise.all(
-    srcDirs.map(srcDir => {
-      return Promise.all(
-        destDirs.map(destDir => {
-          return copy(srcDir, join(destDir, basename(srcDir)))
-        }),
-      )
+    syncs.map(([srcDir, destDirs]) => {
+      if (options.verbose) {
+        console.log('Synchronising %O -> %O', srcDir, destDirs)
+      }
+
+      return Promise.all(destDirs.map(destDir => copy(srcDir, join(destDir, basename(srcDir)))))
     }),
   )
 }
 
 export async function watchDirectoriesForChangesAndMirror(
-  srcDirs: string[],
-  destDirs: string[],
+  syncs: Synchronisations,
   options: Options = {},
-): Promise<void> {
+): Promise<never> {
   throw new Error('not implemented')
-  return Promise.resolve()
 }

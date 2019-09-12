@@ -25,18 +25,10 @@ If `src1/cat`, `src2/dog` and `src2/friend`, `destinations/birthday` and `destin
 
 ## API
 
-You may also use the `API` instead of the command-line utility:
+This library also exports an API:
 
 ```typescript
-export declare function mirrorDirectories(
-  srcDirs: string[],
-  destDirs: string[],
-  options?: Options
-): Promise<void>;
+import { mirrorDirectories } from 'mirror-directories'
 
-export declare function watchDirectoriesForChangesAndMirror(
-  srcDirs: string[],
-  destDirs: string[],
-  options?: Options
-): Promise<void>;
+mirrorDirectories([ ['src1', ['dest1', 'dest2']], ['src2', ['dest2', 'dest3']] ])
 ```

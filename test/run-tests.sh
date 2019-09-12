@@ -36,7 +36,7 @@ touch out1/project2/dir/{could-not,should-not}
 
 mkdir -p out2
 
-../bin/mirror-directories -v -s 'srcs/*' -d out1 -d out2
+../bin/mirror-directories -v -s 'srcs/*' -d out1 -d out2 || die 'mirror-directories failed'
 
 ensure_match() {
   [ -d $2 ] || die "output directory $2 was not created"

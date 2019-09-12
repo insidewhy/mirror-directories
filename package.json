@@ -1,6 +1,6 @@
 {
   "name": "mirror-directories",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "mirror multiple source directories to multiple target destinations",
   "main": "lib/index.js",
   "scripts": {

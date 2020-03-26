@@ -10,6 +10,11 @@ export interface Options {
    * at the cost of watching more files and directories.
    */
   watchProject?: boolean
+
+  /**
+   * When true, do not empty files existing in the output directories before mirroring.
+   */
+  keep?: boolean
 }
 
 // each sync is a pair of source and destination
@@ -32,7 +37,9 @@ export async function mirrorDirectories(
         destDirs.map(async destDir => {
           const fullDestDir = join(destDir, basename(srcDir))
 
-          await emptyDir(fullDestDir)
+          if (!options.keep) {
+            await emptyDir(fullDestDir)
+          }
           await copy(srcDir, fullDestDir)
         }),
       )

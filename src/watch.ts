@@ -90,12 +90,14 @@ export async function watchDirectoriesForChangesAndMirror(
     }),
   )
 
-  // empty destination directories
-  await Promise.all(
-    syncs.map(([srcDir, destDirs]) =>
-      Promise.all(destDirs.map(destDir => emptyDir(join(destDir, basename(srcDir))))),
-    ),
-  )
+  if (! options.keep) {
+    // empty destination directories
+    await Promise.all(
+      syncs.map(([srcDir, destDirs]) =>
+        Promise.all(destDirs.map(destDir => emptyDir(join(destDir, basename(srcDir))))),
+      ),
+    )
+  }
 
   const opQueue = new FileOperationQueue(options.verbose)
 

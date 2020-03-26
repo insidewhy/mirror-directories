@@ -20,6 +20,8 @@ async function doMain() {
       options.verbose = true
     } else if (arg === '-p' || arg === '--watch-project') {
       options.watchProject = true
+    } else if (arg === '-k' || arg === '--keep') {
+      options.keep = true
     } else if (arg === '-s' || arg === '--source') {
       const globbedDirs = await goodGlob(args[++i])
       srcDirs.push(...globbedDirs)

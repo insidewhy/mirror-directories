@@ -7,6 +7,7 @@ die() {
 
 rm -rf srcs out1 out2
 
+echo running standard tests
 mkdir -p srcs/project1/{dir1,dir2}
 mkdir -p srcs/project1/dir1/{subdir-1-1,subdir-1-2}
 mkdir -p srcs/project1/dir2/{subdir-2-1,subdir-2-2}
@@ -43,9 +44,42 @@ ensure_match() {
   diff -r $1 $2 || die "directories $1 and $2 differ"
 }
 
-ensure_match out1/project1 srcs/project1
-ensure_match out1/project2 srcs/project2
-ensure_match out2/project1 srcs/project1
-ensure_match out2/project2 srcs/project2
+ensure_all_matches() {
+  ensure_match out1/project1 srcs/project1
+  ensure_match out1/project2 srcs/project2
+  ensure_match out2/project1 srcs/project1
+  ensure_match out2/project2 srcs/project2
+}
+
+ensure_all_matches
+echo standard tests passed
+
+
+echo running watch tests
+
+# add some files to the output directories to ensure they are removed
+touch out1/project1/dir1/should-not-exist-out1-dir1
+touch out2/project1/dir1/should-not-exist-out2-dir1
+
+../bin/mirror-directories -w -v -s 'srcs/*' -d out1 -d out2 &
+watcher_pid=$!
+kill_watcher() {
+  kill $watcher_pid
+}
+trap kill_watcher exit
+
+sleep 1
+
+echo making changes to srcs
+# create new file
+touch srcs/project2/dir/new-file
+# remove some files
+rm srcs/project1/root-a
+rm srcs/project2/dir/files-g
+# # alter a file
+echo new-line >> srcs/project1/root-b
+
+sleep 1
+ensure_all_matches
 
 echo all tests passed

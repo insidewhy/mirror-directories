@@ -1,12 +1,19 @@
 import { copy, emptyDir } from 'fs-extra'
 import { join, basename } from 'path'
 
-interface Options {
+export interface Options {
   verbose?: boolean
+
+  /**
+   * When true use watchman's 'watch-project' command instead of 'watch'. This is more
+   * efficient when multiple watchman projects are operating on the same directory tree
+   * at the cost of watching more files and directories.
+   */
+  watchProject?: boolean
 }
 
 // each sync is a pair of source and destination
-type Synchronisations = Array<readonly [string, string[]]>
+export type Synchronisations = ReadonlyArray<readonly [string, string[]]>
 
 export async function mirrorDirectories(
   syncs: Synchronisations,
@@ -33,9 +40,4 @@ export async function mirrorDirectories(
   )
 }
 
-export async function watchDirectoriesForChangesAndMirror(
-  syncs: Synchronisations,
-  options: Options = {},
-): Promise<never> {
-  throw new Error('not implemented')
-}
+export { watchDirectoriesForChangesAndMirror } from './watch'

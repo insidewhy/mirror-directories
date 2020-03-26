@@ -28,10 +28,17 @@ If `src1/cat`, `src2/dog` and `src2/friend`, `destinations/birthday` and `destin
 This library also exports an API:
 
 ```typescript
-import { mirrorDirectories } from 'mirror-directories'
+import {
+  mirrorDirectories,
+  watchDirectoriesForChangesAndMirror,
+} from 'mirror-directories'
 
 mirrorDirectories([
   ['src1', ['dest1', 'dest2']],
   ['src2', ['dest2', 'dest3']],
+])
+
+watchDirectoriesForChangesAndMirror([
+  ['src3', ['dest4', 'dest5']],
 ])
 ```

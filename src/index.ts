@@ -14,9 +14,6 @@ export async function mirrorDirectories(
 ): Promise<void> {
   if (!syncs.length) throw new Error('Must supply at least one copy')
 
-  // delete contents of dest directories
-  await Promise.all(syncs.map(sync => Promise.all(sync[1].map(destDir => emptyDir(destDir)))))
-
   // copy source directories into dest directories
   await Promise.all(
     syncs.map(([srcDir, destDirs]) => {
@@ -24,7 +21,14 @@ export async function mirrorDirectories(
         console.log('Synchronising %O -> %O', srcDir, destDirs)
       }
 
-      return Promise.all(destDirs.map(destDir => copy(srcDir, join(destDir, basename(srcDir)))))
+      return Promise.all(
+        destDirs.map(async destDir => {
+          const fullDestDir = join(destDir, basename(srcDir))
+
+          await emptyDir(fullDestDir)
+          await copy(srcDir, fullDestDir)
+        }),
+      )
     }),
   )
 }

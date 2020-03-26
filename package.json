@@ -25,12 +25,12 @@
     "glob": "^7.1.4"
   },
   "devDependencies": {
-    "@types/fb-watchman": "^2.0.0",
+    "@types/fb-watchman": "2.0.0",
     "@types/fs-extra": "8.0.0",
     "@types/glob": "7.1.1",
     "@types/node": "12.7.4",
     "husky": "3.0.7",
     "pretty-quick": "1.11.1",
-    "typescript": "^3.8.3"
+    "typescript": "3.8.3"
   }
 }

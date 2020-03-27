@@ -1,5 +1,9 @@
 # mirror-directories
 
+[![build status](https://circleci.com/gh/insidewhy/mirror-directories.png?style=shield)](https://circleci.com/gh/insidewhy/mirror-directories)
+[![Known Vulnerabilities](https://snyk.io/test/github/insidewhy/mirror-directories/badge.svg)](https://snyk.io/test/github/insidewhy/mirror-directories)
+
+
 ## Usage
 
 ### Example 1

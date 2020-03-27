@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 die() {
   echo $1

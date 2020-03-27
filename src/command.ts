@@ -1,7 +1,12 @@
 import * as glob from 'glob'
 import * as util from 'util'
 
-import { mirrorDirectories, Options, watchDirectoriesForChangesAndMirror } from '.'
+import {
+  mirrorDirectories,
+  Options,
+  watchDirectoriesForChangesAndMirror,
+  Synchronisations,
+} from '.'
 
 const goodGlob = util.promisify(glob)
 
@@ -26,7 +31,7 @@ async function doMain() {
       const globbedDirs = await goodGlob(args[++i])
       srcDirs.push(...globbedDirs)
     } else if (arg === '-d' || arg === '--dest') {
-      const globbedDirs = await goodGlob(args[++i])
+      const globbedDirs = await goodGlob(args[++i], { nonull: true })
       destDirs.push(...globbedDirs)
     } else if (arg === '-h' || arg === '--help') {
       console.log(args[1] + ' [-h] [-v] [-p] [-s <dir>] [-d <dir]')
@@ -36,7 +41,13 @@ async function doMain() {
     }
   }
 
-  const syncs = srcDirs.map(srcDir => [srcDir, destDirs] as const)
+  const syncs: Synchronisations = srcDirs.map(srcDir =>
+    Object.freeze({
+      srcDirs: [srcDir],
+      destDirs,
+      rename: srcDir.endsWith('/'),
+    }),
+  )
 
   if (watch) {
     // the watcher emits the current state first so there's no need to run

@@ -17,8 +17,19 @@ export interface Options {
   keep?: boolean
 }
 
+export interface Synchronisation {
+  srcDirs: string[]
+  destDirs: string[]
+
+  /**
+   * When false, each srcDir basename is created in each destDir, when true,
+   * the contents of each srcDir are copied into each destDir.
+   */
+  rename: boolean
+}
+
 // each sync is a pair of source and destination
-export type Synchronisations = ReadonlyArray<readonly [string, string[]]>
+export type Synchronisations = ReadonlyArray<Readonly<Synchronisation>>
 
 export async function mirrorDirectories(
   syncs: Synchronisations,
@@ -28,20 +39,24 @@ export async function mirrorDirectories(
 
   // copy source directories into dest directories
   await Promise.all(
-    syncs.map(([srcDir, destDirs]) => {
+    syncs.map(({ srcDirs, destDirs, rename }) => {
       if (options.verbose) {
-        console.log('Synchronising %O -> %O', srcDir, destDirs)
+        console.log('Synchronising %O -> %O', srcDirs, destDirs)
       }
 
       return Promise.all(
-        destDirs.map(async destDir => {
-          const fullDestDir = join(destDir, basename(srcDir))
+        srcDirs.map(srcDir =>
+          Promise.all(
+            destDirs.map(async destDir => {
+              const fullDestDir = rename ? destDir : join(destDir, basename(srcDir))
 
-          if (!options.keep) {
-            await emptyDir(fullDestDir)
-          }
-          await copy(srcDir, fullDestDir)
-        }),
+              if (!options.keep) {
+                await emptyDir(fullDestDir)
+              }
+              await copy(srcDir, fullDestDir)
+            }),
+          ),
+        ),
       )
     }),
   )

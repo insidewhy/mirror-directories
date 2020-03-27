@@ -5,7 +5,7 @@ die() {
   exit 1
 }
 
-rm -rf srcs out1 out2
+rm -rf srcs out*
 
 echo running standard tests
 mkdir -p srcs/project1/{dir1,dir2}
@@ -40,7 +40,7 @@ mkdir -p out2
 ../bin/mirror-directories -v -s 'srcs/*' -d out1 -d out2 || die 'mirror-directories failed'
 
 ensure_match() {
-  [ -d $2 ] || die "output directory $2 was not created"
+  [ -d $1 ] || die "output directory $1 was not created"
   diff -r $1 $2 || die "directories $1 and $2 differ"
 }
 
@@ -63,12 +63,11 @@ touch out2/project1/dir1/should-not-exist-out2-dir1
 
 ../bin/mirror-directories -w -v -s 'srcs/*' -d out1 -d out2 &
 watcher_pid=$!
+sleep 1
 kill_watcher() {
-  kill $watcher_pid
+  [ -n "$watcher_pid" ] && kill $watcher_pid
 }
 trap kill_watcher exit
-
-sleep 1
 
 echo making changes to srcs
 # create new file
@@ -78,8 +77,32 @@ rm srcs/project1/root-a
 rm srcs/project2/dir/files-g
 # # alter a file
 echo new-line >> srcs/project1/root-b
-
 sleep 1
+
 ensure_all_matches
+kill $watcher_pid
+watcher_pid=""
+
+echo running rename tests
+mkdir -p srcs/oldname/subdir
+touch srcs/oldname/file
+touch srcs/oldname/subdir/subdir-files{1,2,3}
+
+../bin/mirror-directories -v -s srcs/oldname/ -d out3
+ensure_match out3/subdir srcs/oldname/subdir
+diff out3/file srcs/oldname/file || die "files in root directory differ"
+
+# echo running watch rename tests
+../bin/mirror-directories -w -v -s srcs/oldname/ -d out3 &
+watcher_pid=$!
+sleep 1
+
+# change stuff in the renamed directory
+rm srcs/oldname/subdir/subdir-files2
+echo stuff >> srcs/oldname/subdir/subdir-files3
+sleep 1
+
+ensure_match out3/subdir srcs/oldname/subdir
+diff out3/file srcs/oldname/file || die "files in root directory differ"
 
 echo all tests passed

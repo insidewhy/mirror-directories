@@ -2,7 +2,7 @@ import { Client } from 'fb-watchman'
 import { copy, unlink, emptyDir, realpath } from 'fs-extra'
 import { join, basename, dirname } from 'path'
 
-import type { Options, Synchronisations } from '.'
+import type { Options, Synchronisations, Synchronisation } from '.'
 
 interface FileChange {
   name: string
@@ -36,7 +36,7 @@ class FileOperationQueue {
 
   push(op: FileOperation) {
     // remove pending operations for the same source since this one would only override it
-    this.pending = this.pending.filter(pendingOp => pendingOp.source !== op.source)
+    this.pending = this.pending.filter((pendingOp) => pendingOp.source !== op.source)
     this.pending.push(op)
 
     if (this.pending.length === 1 && !this.running) {
@@ -55,11 +55,11 @@ class FileOperationQueue {
 
       if (nextOp.type === 'remove') {
         await Promise.all(
-          nextOp.destinations.map(destDir => unlink(join(destDir, nextOp.source))),
+          nextOp.destinations.map((destDir) => unlink(join(destDir, nextOp.source))),
         )
       } else if (nextOp.type === 'copy') {
         await Promise.all(
-          nextOp.destinations.map(destDir =>
+          nextOp.destinations.map((destDir) =>
             copy(join(nextOp.root, nextOp.source), join(destDir, nextOp.source)),
           ),
         )
@@ -81,20 +81,32 @@ export async function watchDirectoriesForChangesAndMirror(
   options: Options = {},
 ): Promise<never> {
   // map of full directory source to output directories
-  const watchMap: Map<string, string[]> = new Map()
+  const watchMap: Map<string, Synchronisation> = new Map()
 
   // build watchMap
   await Promise.all(
-    syncs.map(async ([srcDir, destDirs]) => {
-      watchMap.set(await realpath(srcDir), destDirs)
-    }),
+    syncs.map((sync) =>
+      Promise.all(
+        sync.srcDirs.map(async (srcDir) => {
+          watchMap.set(await realpath(srcDir), sync)
+        }),
+      ),
+    ),
   )
 
-  if (! options.keep) {
+  if (!options.keep) {
     // empty destination directories
     await Promise.all(
-      syncs.map(([srcDir, destDirs]) =>
-        Promise.all(destDirs.map(destDir => emptyDir(join(destDir, basename(srcDir))))),
+      syncs.map(({ srcDirs, destDirs, rename }) =>
+        Promise.all(
+          srcDirs.map((srcDir) =>
+            Promise.all(
+              destDirs.map((destDir) =>
+                emptyDir(rename ? destDir : join(destDir, basename(srcDir))),
+              ),
+            ),
+          ),
+        ),
       ),
     )
   }
@@ -106,8 +118,8 @@ export async function watchDirectoriesForChangesAndMirror(
 
     client.on('subscription', ({ root, files }) => {
       files.forEach(({ name, exists, type }: FileChange) => {
-        const destDirs = watchMap.get(root)
-        if (!destDirs) {
+        const sync = watchMap.get(root)
+        if (!sync) {
           console.warn('Unexpected watch root seen: %s', root)
           return
         }
@@ -119,14 +131,14 @@ export async function watchDirectoriesForChangesAndMirror(
           }
 
           if (options.verbose) {
-            console.log('file change: %s => %s to %O', root, name, destDirs, type)
+            console.log('file change: %s => %s to %O', root, name, sync.destDirs, type)
           }
 
           opQueue.push({
             type: 'copy',
-            root: dirname(root),
-            source: join(basename(root), name),
-            destinations: destDirs,
+            root: sync.rename ? root : dirname(root),
+            source: sync.rename ? name : join(basename(root), name),
+            destinations: sync.destDirs,
           })
         } else {
           if (options.verbose) {
@@ -134,20 +146,20 @@ export async function watchDirectoriesForChangesAndMirror(
               '%s remove: %s from %O',
               isDirectory ? 'directory' : 'file',
               name,
-              destDirs,
+              sync.destDirs,
             )
           }
 
           opQueue.push({
             type: 'remove',
-            source: join(basename(root), name),
-            destinations: destDirs,
+            source: sync.rename ? name : join(basename(root), name),
+            destinations: sync.destDirs,
           })
         }
       })
     })
 
-    client.capabilityCheck({ optional: [], required: ['relative_root'] }, async error => {
+    client.capabilityCheck({ optional: [], required: ['relative_root'] }, async (error) => {
       const endAndReject = (message: string) => {
         client.end()
         reject(new Error(message))
@@ -157,32 +169,36 @@ export async function watchDirectoriesForChangesAndMirror(
         return endAndReject(`Could not confirm capabilities: ${error.message}`)
       }
 
-      syncs.forEach(async ([srcDir]) => {
-        const fullSrcDir = await realpath(srcDir)
-        client.command(
-          [options.watchProject ? 'watch-project' : 'watch', fullSrcDir],
-          (error, watchResp) => {
-            if (error) {
-              return endAndReject(`Could not initiate watch: ${error.message}`)
-            }
+      syncs.forEach(({ srcDirs }) =>
+        Promise.all(
+          srcDirs.map(async (srcDir) => {
+            const fullSrcDir = await realpath(srcDir)
+            client.command(
+              [options.watchProject ? 'watch-project' : 'watch', fullSrcDir],
+              (error, watchResp) => {
+                if (error) {
+                  return endAndReject(`Could not initiate watch: ${error.message}`)
+                }
 
-            const sub: any = {
-              expression: ['allof', ['match', '*']],
-              fields: ['name', 'exists', 'type'],
-            }
-            const relativePath = watchResp.relative_path
-            if (relativePath) {
-              sub.relative_root = relativePath
-            }
+                const sub: any = {
+                  expression: ['allof', ['match', '*']],
+                  fields: ['name', 'exists', 'type'],
+                }
+                const relativePath = watchResp.relative_path
+                if (relativePath) {
+                  sub.relative_root = relativePath
+                }
 
-            client.command(['subscribe', watchResp.watch, 'sub-name', sub], error => {
-              if (error) {
-                return endAndReject(`Could not subscribe to changes: ${error.message}`)
-              }
-            })
-          },
-        )
-      })
+                client.command(['subscribe', watchResp.watch, 'sub-name', sub], (error) => {
+                  if (error) {
+                    return endAndReject(`Could not subscribe to changes: ${error.message}`)
+                  }
+                })
+              },
+            )
+          }),
+        ),
+      )
     })
   })
 }

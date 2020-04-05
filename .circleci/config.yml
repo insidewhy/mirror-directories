@@ -16,12 +16,12 @@ jobs:
             echo "deb http://http.us.debian.org/debian testing main non-free contrib" | sudo tee -a /etc/apt/sources.list
             sudo apt-get update
             sudo apt-get install watchman
-      - run: npm ci
+      - run: yarn install --frozen-lockfile
       - save_cache:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "yarn.lock" }}
-      - run: npm run build && npm test
+      - run: yarn build && yarn test
 workflows:
   version: 2
   test:

@@ -19,10 +19,10 @@
   },
   "sideEffects": false,
   "scripts": {
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "yarn build",
     "test": "cd test && ./run-tests.sh",
     "build": "tsc -p src",
-    "watch": "npm run build -- -w",
+    "watch": "yarn build -- -w",
     "clean": "rimraf dist"
   },
   "dependencies": {

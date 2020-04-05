@@ -10,6 +10,12 @@ jobs:
           keys:
             - v1-dependencies-{{ checksum "yarn.lock" }}
             - v1-dependencies-
+      - run:
+          name: install watchman
+          command: |
+            echo "deb http://http.us.debian.org/debian testing main non-free contrib" | sudo tee -a /etc/apt/sources.list
+            sudo apt-get update
+            sudo apt-get install watchman
       - run: npm ci
       - save_cache:
           paths:

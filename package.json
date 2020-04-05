@@ -23,7 +23,13 @@
     "test": "cd test && ./run-tests.sh",
     "build": "tsc -p src",
     "watch": "yarn build -- -w",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "lint": "eslint 'src/*.ts'",
+    "lint-fix": "yarn lint --fix",
+    "run-prettier": "prettier 'src/*.ts' '*.md'",
+    "validate-prettiness": "yarn run-prettier -c",
+    "make-prettier": "yarn run-prettier --write",
+    "validate": "yarn test && yarn lint && yarn validate-prettiness"
   },
   "dependencies": {
     "fb-watchman": "^2.0.1",
@@ -35,6 +41,10 @@
     "@types/fs-extra": "8.1.0",
     "@types/glob": "7.1.1",
     "@types/node": "12.12.34",
+    "@typescript-eslint/eslint-plugin": "2.26.0",
+    "@typescript-eslint/parser": "2.26.0",
+    "eslint": "6.8.0",
+    "eslint-config-prettier": "6.10.1",
     "husky": "4.2.3",
     "prettier": "2.0.2",
     "pretty-quick": "2.0.1",

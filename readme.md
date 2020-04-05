@@ -4,10 +4,10 @@
 [![Known Vulnerabilities](https://snyk.io/test/github/insidewhy/mirror-directories/badge.svg)](https://snyk.io/test/github/insidewhy/mirror-directories)
 [![Renovate](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://renovatebot.com)
 
-
 ## Usage
 
 ### Example 1
+
 Recursively copy all the directories matching the glob `src/*` to `out1` and `out2`:
 
 ```bash
@@ -43,10 +43,7 @@ Creates `out` as a mirror of `src` instead of creating `out/src` as a mirror of 
 This library also exports an API:
 
 ```typescript
-import {
-  mirrorDirectories,
-  watchDirectoriesForChangesAndMirror,
-} from 'mirror-directories'
+import { mirrorDirectories, watchDirectoriesForChangesAndMirror } from 'mirror-directories'
 
 // the default options are { keep: false, rename: false }
 mirrorDirectories([
@@ -54,18 +51,13 @@ mirrorDirectories([
   { srcDirs: ['src2', 'src3'], destDirs: ['dest2', 'dest3'] },
 ])
 
-watchDirectoriesForChangesAndMirror(
-  [
-    { srcDirs: ['src4'], destDirs: ['dest4', 'dest5'] },
-  ],
-  {
-    // keep existing contents in destination directories
-    keep: true,
-    // use watchman's "watch-project" command rather than "watch"
-    watchProject: true,
-    // mirrors `src4` to `dest4` and `dest5` instead of
-    // `dest4/src4` and `dest5/src4`
-    rename: true
-  }
-)
+watchDirectoriesForChangesAndMirror([{ srcDirs: ['src4'], destDirs: ['dest4', 'dest5'] }], {
+  // keep existing contents in destination directories
+  keep: true,
+  // use watchman's "watch-project" command rather than "watch"
+  watchProject: true,
+  // mirrors `src4` to `dest4` and `dest5` instead of
+  // `dest4/src4` and `dest5/src4`
+  rename: true,
+})
 ```

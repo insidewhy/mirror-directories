@@ -41,7 +41,7 @@ async function doMain() {
     }
   }
 
-  const syncs: Synchronisations = srcDirs.map(srcDir =>
+  const syncs: Synchronisations = srcDirs.map((srcDir) =>
     Object.freeze({
       srcDirs: [srcDir],
       destDirs,

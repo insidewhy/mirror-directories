@@ -186,6 +186,7 @@ export async function watchDirectoriesForChangesAndMirror(
                 }
                 const relativePath = watchResp.relative_path
                 if (relativePath) {
+                  // eslint-disable-next-line @typescript-eslint/camelcase
                   sub.relative_root = relativePath
                 }
 

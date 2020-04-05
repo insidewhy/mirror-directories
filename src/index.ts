@@ -45,9 +45,9 @@ export async function mirrorDirectories(
       }
 
       return Promise.all(
-        srcDirs.map(srcDir =>
+        srcDirs.map((srcDir) =>
           Promise.all(
-            destDirs.map(async destDir => {
+            destDirs.map(async (destDir) => {
               const fullDestDir = rename ? destDir : join(destDir, basename(srcDir))
 
               if (!options.keep) {

@@ -5,7 +5,7 @@
     "lib": ["es6"],
     "module": "commonjs",
     "moduleResolution": "node",
-    "outDir": "../lib",
+    "outDir": "../dist",
     "sourceMap": true,
     "target": "es2017",
     "preserveWatchOutput": true

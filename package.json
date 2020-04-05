@@ -1,24 +1,29 @@
 {
   "name": "mirror-directories",
-  "sideEffects": false,
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "mirror multiple source directories to multiple target destinations",
-  "main": "lib/index.js",
+  "author": "insidewhy <github@chilon.net>",
+  "license": "ISC",
+  "keywords": [
+    "typescript",
+    "tsc"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/insidewhy/mirror-directories.git"
+  },
+  "main": "dist/index.js",
+  "typings": "dist/index",
+  "bin": {
+    "mirror-directories": "./bin/mirror-directories"
+  },
+  "sideEffects": false,
   "scripts": {
     "prepublishOnly": "npm run build",
     "test": "cd test && ./run-tests.sh",
     "build": "tsc -p src",
     "watch": "npm run build -- -w"
   },
-  "bin": {
-    "mirror-directories": "./bin/mirror-directories"
-  },
-  "keywords": [
-    "typescript",
-    "tsc"
-  ],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "fb-watchman": "^2.0.1",
     "fs-extra": "^8.1.0",

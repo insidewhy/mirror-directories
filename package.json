@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "@types/fb-watchman": "2.0.0",
-    "@types/fs-extra": "8.0.0",
+    "@types/fs-extra": "8.1.0",
     "@types/glob": "7.1.1",
     "@types/node": "12.7.4",
     "husky": "3.0.7",

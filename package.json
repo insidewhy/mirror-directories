@@ -22,7 +22,7 @@
     "prepublishOnly": "yarn build",
     "test": "cd test && ./run-tests.sh",
     "build": "tsc -p src",
-    "watch": "yarn build -- -w",
+    "watch": "yarn build -w",
     "clean": "rimraf dist",
     "lint": "eslint 'src/*.ts'",
     "lint-fix": "yarn lint --fix",

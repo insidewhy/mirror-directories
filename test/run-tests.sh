@@ -54,6 +54,12 @@ ensure_all_matches() {
 ensure_all_matches
 echo standard tests passed
 
+echo "standard tests using -m argument"
+rm -rf out*
+../bin/mirror-directories -v -m srcs/project1:out1 -m srcs/project2/:out2/friend || die 'mirror-directories failed'
+ensure_match out1/project1 srcs/project1
+ensure_match out2/friend srcs/project2
+
 
 echo running watch tests
 

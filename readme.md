@@ -38,6 +38,16 @@ A trailing slash can be used to copy the contents of the source directory into t
 
 Creates `out` as a mirror of `src` instead of creating `out/src` as a mirror of `src`. This corresponds to the `rename` option of the API.
 
+### Example 4
+
+The `-m` argument can be used to specify independent source/dest pairs.
+
+```bash
+% mirror-directories -m src:out -m friends/:enemies
+```
+
+This will mirror `src` to `out/src` and `friends` to `enemies`.
+
 ## API
 
 This library also exports an API:

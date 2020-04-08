@@ -1,6 +1,6 @@
 {
   "name": "mirror-directories",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "mirror multiple source directories to multiple target destinations",
   "author": "insidewhy <github@chilon.net>",
   "license": "ISC",

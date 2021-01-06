@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@types/fb-watchman": "2.0.0",
-    "@types/fs-extra": "9.0.1",
+    "@types/fs-extra": "9.0.6",
     "@types/glob": "7.1.1",
     "@types/node": "12.12.42",
     "@typescript-eslint/eslint-plugin": "2.30.0",

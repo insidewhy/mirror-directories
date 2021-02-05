@@ -1,4 +1,5 @@
 import { Client } from 'fb-watchman'
+import { existsSync } from 'fs'
 import { copy, unlink, emptyDir, realpath } from 'fs-extra'
 import { join, basename, dirname } from 'path'
 
@@ -80,22 +81,36 @@ class FileOperationQueue {
   }
 }
 
+interface Watch {
+  sync: Synchronisation
+  precedences?: {
+    // output files against precedence
+    map: Map<string, number>
+    // roots in order of precedence
+    roots: string[]
+  }
+}
+
 export async function watchDirectoriesForChangesAndMirror(
   syncs: Synchronisations,
   options: Options = {},
 ): Promise<never> {
   // map of full directory source to output directories
-  const watchMap: Map<string, Synchronisation> = new Map()
+  const watchMap: Map<string, Watch> = new Map()
 
   // build watchMap
   await Promise.all(
-    syncs.map((sync) =>
-      Promise.all(
-        sync.srcDirs.map(async (srcDir) => {
-          watchMap.set(await realpath(srcDir), sync)
-        }),
-      ),
-    ),
+    syncs.map(async (sync) => {
+      const roots = await Promise.all(sync.srcDirs.map((srcDir) => realpath(srcDir)))
+      const watch: Watch = {
+        sync,
+        precedences:
+          !sync.rename || sync.srcDirs.length < 2 ? undefined : { map: new Map(), roots },
+      }
+      for (const root of roots) {
+        watchMap.set(root, watch)
+      }
+    }),
   )
 
   if (!options.keep) {
@@ -121,12 +136,18 @@ export async function watchDirectoriesForChangesAndMirror(
     const client = new Client()
 
     client.on('subscription', ({ root, files }) => {
+      if (!files) {
+        // watchman... why
+        return
+      }
+
       files.forEach(({ name, exists, type }: FileChange) => {
-        const sync = watchMap.get(root)
-        if (!sync) {
+        const watch = watchMap.get(root)
+        if (!watch) {
           console.warn('Unexpected watch root seen: %s', root)
           return
         }
+        const { sync, precedences } = watch
         const isDirectory = type === 'd'
         if (exists) {
           if (isDirectory) {
@@ -138,10 +159,28 @@ export async function watchDirectoriesForChangesAndMirror(
             console.log('file change: %s => %s to %O', root, name, sync.destDirs, type)
           }
 
+          const source = sync.rename ? name : join(basename(root), name)
+
+          if (precedences) {
+            const precedence = precedences.roots.indexOf(root)
+            if (precedence === -1) {
+              throw new Error(`root not found in precedence map: ${root}`)
+            }
+            const existingPrecedence = precedences.map.get(source)
+            if (existingPrecedence !== undefined && precedence < existingPrecedence) {
+              if (options.verbose) {
+                console.log('skipping file copy of %s due to precedence', source)
+              }
+              return
+            } else {
+              precedences.map.set(source, precedence)
+            }
+          }
+
           opQueue.push({
             type: 'copy',
             root: sync.rename ? root : dirname(root),
-            source: sync.rename ? name : join(basename(root), name),
+            source,
             destinations: sync.destDirs,
           })
         } else {
@@ -154,9 +193,42 @@ export async function watchDirectoriesForChangesAndMirror(
             )
           }
 
+          const source = sync.rename ? name : join(basename(root), name)
+          if (precedences) {
+            const precedence = precedences.roots.indexOf(root)
+            if (precedence === -1) {
+              throw new Error(`root not found in precedence map: ${root}`)
+            }
+            const existingPrecedence = precedences.map.get(source)
+            if (existingPrecedence !== undefined) {
+              if (precedence < existingPrecedence) {
+                if (options.verbose) {
+                  console.log('skipping file deletion of %s due to precedence', source)
+                }
+                return
+              }
+
+              for (let i = existingPrecedence - 1; i >= 0; --i) {
+                // existsSync :( but this situation is rare and if we go async then the
+                // ordering of operations will break leading to race conditions
+                if (existsSync(join(precedences.roots[i], source))) {
+                  opQueue.push({
+                    type: 'copy',
+                    root: precedences.roots[i],
+                    source,
+                    destinations: sync.destDirs,
+                  })
+                  precedences.map.set(source, i)
+                  return
+                }
+              }
+              precedences.map.delete(source)
+            }
+          }
+
           opQueue.push({
             type: 'remove',
-            source: sync.rename ? name : join(basename(root), name),
+            source,
             destinations: sync.destDirs,
           })
         }

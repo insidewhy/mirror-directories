@@ -1,6 +1,6 @@
 {
   "name": "mirror-directories",
-  "version": "3.0.3",
+  "version": "3.1.0",
   "description": "mirror multiple source directories to multiple target destinations",
   "author": "insidewhy <github@chilon.net>",
   "license": "ISC",
@@ -22,6 +22,7 @@
     "prepublishOnly": "yarn build",
     "test": "cd test && ./run-tests.sh",
     "build": "tsc -p src",
+    "typecheck": "yarn build --noEmit",
     "watch": "yarn build -w",
     "clean": "rimraf dist",
     "lint": "eslint 'src/*.ts'",

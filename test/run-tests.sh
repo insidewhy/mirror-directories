@@ -152,9 +152,48 @@ rename_tests_with_multiple_sources() {
   ensure_multi_content multi2 blah
 }
 
+rename_tests_with_multiple_sources_watch() {
+  echo running rename tests with multiple sources
+  setup_multi_rename_sources
+
+  ../bin/mirror-directories -w -v -m srcs/multi1/:srcs/multi2/:out-multi &
+  watcher_pid=$!
+  sleep 1
+
+  ensure_multi_content multi1 multi1-only
+  ensure_multi_content multi2 multi2-only
+  ensure_multi_content multi2 blah
+
+  echo new-multi2-content >> srcs/multi2/blah
+  sleep 1
+  ensure_multi_content multi2 blah
+
+  # should not update blah when it changes in multi1 since multi2 should override it
+  echo new-multi1-content >> srcs/multi1/blah
+  sleep 1
+  ensure_multi_content multi2 blah
+
+  # should not remove blah when it is removed from multi1 due to precedence
+  rm srcs/multi1/blah
+  sleep 1
+  ensure_multi_content multi2 blah
+
+  # after deleting the multi2 copy of blah the output will mirror the multi1 copy
+  echo newer-multi1-content > srcs/multi1/blah
+  rm srcs/multi2/blah
+  sleep 1
+  ensure_multi_content multi1 blah
+
+  # and keep mirroring it
+  echo newest-multi1-content > srcs/multi1/blah
+  sleep 1
+  ensure_multi_content multi1 blah
+}
+
 standard_tests
 standard_tests_with_m_arg
 watch_tests
 rename_tests
 rename_tests_with_multiple_sources
+rename_tests_with_multiple_sources_watch
 echo all tests passed

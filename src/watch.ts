@@ -32,7 +32,7 @@ class FileOperationQueue {
   pending: FileOperation[] = []
   running = false
 
-  constructor(readonly verbose = false) {}
+  constructor(private readonly verbose = false) {}
 
   push(op: FileOperation) {
     // remove pending operations for the same source since this one would only override it
@@ -46,7 +46,11 @@ class FileOperationQueue {
   }
 
   private async runNext() {
-    const nextOp = this.pending.shift()!
+    const nextOp = this.pending.shift()
+    if (!nextOp) {
+      this.running = false
+      return
+    }
 
     try {
       if (this.verbose) {
@@ -180,13 +184,13 @@ export async function watchDirectoriesForChangesAndMirror(
                   return endAndReject(`Could not initiate watch: ${error.message}`)
                 }
 
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const sub: any = {
                   expression: ['allof', ['match', '*']],
                   fields: ['name', 'exists', 'type'],
                 }
                 const relativePath = watchResp.relative_path
                 if (relativePath) {
-                  // eslint-disable-next-line @typescript-eslint/camelcase
                   sub.relative_root = relativePath
                 }
 

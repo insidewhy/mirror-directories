@@ -26,7 +26,7 @@ Recursively copy `src1` and `src2` to all the directories matching `destinations
 % mirror-directories -s src1 -s src2 -d 'destinations/*'
 ```
 
-If `src1/cat`, `src2/dog` and `src2/friend`, `destinations/birthday` and `destinations/fear` exist then at the end `destinations/{birthday,fear}/{cat,dog,friend}` will be exact copies of the respective files in `src1` and `src2`.
+If `destinations/birthday` and `destinations/fear` exist then at the end `destinations/{birthday,fear}/{src1,src2}` will be exact copies of their respective source directories.
 
 ### Example 3
 
@@ -46,7 +46,7 @@ The `-m` argument can be used to specify independent source/dest pairs.
 % mirror-directories -m src:out -m friends/:enemies
 ```
 
-This will mirror `src` to `out/src` and `friends` to `enemies`.
+This will mirror `src` to `out/src` and the contents of the `friends` directory to the `enemies` directory.
 
 ## API
 

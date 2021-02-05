@@ -5,39 +5,12 @@ die() {
   exit 1
 }
 
+kill_watcher() {
+  [ -n "$watcher_pid" ] && kill $watcher_pid
+}
+trap kill_watcher exit
+
 rm -rf srcs out*
-
-echo running standard tests
-mkdir -p srcs/project1/{dir1,dir2}
-mkdir -p srcs/project1/dir1/{subdir-1-1,subdir-1-2}
-mkdir -p srcs/project1/dir2/{subdir-2-1,subdir-2-2}
-mkdir -p srcs/project2
-mkdir -p srcs/project2/dir
-
-# create source directory trees
-touch srcs/project1/dir1/subdir-1-1/{file-1-1-1,file-1-1-2}
-touch srcs/project1/dir1/subdir-1-2/{file-1-2-1,file-1-2-2}
-touch srcs/project1/dir2/subdir-2-1/{file-2-1-1,file-2-1-2}
-touch srcs/project1/dir2/subdir-2-2/{file-2-2-1,file-2-2-2}
-touch srcs/project1/dir1/{file-1-1,file-1-2}
-touch srcs/project1/dir2/{file-2-1,file-2-2}
-touch srcs/project1/root-{a,b,c}
-touch srcs/project2/root-{d,e,f}
-touch srcs/project2/dir/files-{g,h,i}
-
-# create output directory trees and add some files to them so we
-# can make sure the mirror deletes them
-mkdir -p out1/project1/{dir1,dir2}
-mkdir -p out1/project1/dir1/subdir-1-1
-mkdir -p out1/project2/dir
-touch out1/project1/dir{1,2}/should-not-exist
-touch out1/project1/dir1/subdir-1-1/also-should-not-exist
-touch out1/project2/{nowhere,neverwhere}
-touch out1/project2/dir/{could-not,should-not}
-
-mkdir -p out2
-
-../bin/mirror-directories -v -s 'srcs/*' -d out1 -d out2 || die 'mirror-directories failed'
 
 ensure_match() {
   [ -d $1 ] || die "output directory $1 was not created"
@@ -51,64 +24,137 @@ ensure_all_matches() {
   ensure_match out2/project2 srcs/project2
 }
 
-ensure_all_matches
-echo standard tests passed
+setup_standard_test_files() {
+  mkdir -p srcs/project1/{dir1,dir2}
+  mkdir -p srcs/project1/dir1/{subdir-1-1,subdir-1-2}
+  mkdir -p srcs/project1/dir2/{subdir-2-1,subdir-2-2}
+  mkdir -p srcs/project2
+  mkdir -p srcs/project2/dir
 
-echo "standard tests using -m argument"
-rm -rf out*
-../bin/mirror-directories -v -m srcs/project1:out1 -m srcs/project2/:out2/friend || die 'mirror-directories failed'
-ensure_match out1/project1 srcs/project1
-ensure_match out2/friend srcs/project2
+  # create source directory trees
+  touch srcs/project1/dir1/subdir-1-1/{file-1-1-1,file-1-1-2}
+  touch srcs/project1/dir1/subdir-1-2/{file-1-2-1,file-1-2-2}
+  touch srcs/project1/dir2/subdir-2-1/{file-2-1-1,file-2-1-2}
+  touch srcs/project1/dir2/subdir-2-2/{file-2-2-1,file-2-2-2}
+  touch srcs/project1/dir1/{file-1-1,file-1-2}
+  touch srcs/project1/dir2/{file-2-1,file-2-2}
+  touch srcs/project1/root-{a,b,c}
+  touch srcs/project2/root-{d,e,f}
+  touch srcs/project2/dir/files-{g,h,i}
 
+  # create output directory trees and add some files to them so we
+  # can make sure the mirror deletes them
+  mkdir -p out1/project1/{dir1,dir2}
+  mkdir -p out1/project1/dir1/subdir-1-1
+  mkdir -p out1/project2/dir
+  touch out1/project1/dir{1,2}/should-not-exist
+  touch out1/project1/dir1/subdir-1-1/also-should-not-exist
+  touch out1/project2/{nowhere,neverwhere}
+  touch out1/project2/dir/{could-not,should-not}
 
-echo running watch tests
-
-# add some files to the output directories to ensure they are removed
-touch out1/project1/dir1/should-not-exist-out1-dir1
-touch out2/project1/dir1/should-not-exist-out2-dir1
-
-../bin/mirror-directories -w -v -s 'srcs/*' -d out1 -d out2 &
-watcher_pid=$!
-sleep 1
-kill_watcher() {
-  [ -n "$watcher_pid" ] && kill $watcher_pid
+  mkdir -p out2
 }
-trap kill_watcher exit
 
-echo making changes to srcs
-# create new file
-touch srcs/project2/dir/new-file
-# remove some files
-rm srcs/project1/root-a
-rm srcs/project2/dir/files-g
-# # alter a file
-echo new-line >> srcs/project1/root-b
-sleep 1
+standard_tests() {
+  echo running standard tests
+  setup_standard_test_files
 
-ensure_all_matches
-kill $watcher_pid
-watcher_pid=""
+  ../bin/mirror-directories -v -s 'srcs/*' -d out1 -d out2 || die 'mirror-directories failed'
 
-echo running rename tests
-mkdir -p srcs/oldname/subdir
-touch srcs/oldname/file
-touch srcs/oldname/subdir/subdir-files{1,2,3}
+  ensure_all_matches
+  echo standard tests passed
+}
 
-../bin/mirror-directories -v -s srcs/oldname/ -d out3
-ensure_match out3/subdir srcs/oldname/subdir
-diff out3/file srcs/oldname/file || die "files in root directory differ"
+standard_tests_with_m_arg() {
+  echo "standard tests using -m argument"
+  setup_standard_test_files
+  rm -rf out*
+  ../bin/mirror-directories -v -m srcs/project1:out1 -m srcs/project2/:out2/friend || die 'mirror-directories failed'
+  ensure_match out1/project1 srcs/project1
+  ensure_match out2/friend srcs/project2
+}
 
-# echo running watch rename tests
-../bin/mirror-directories -w -v -s srcs/oldname/ -d out3 &
-watcher_pid=$!
-sleep 1
+watch_tests() {
+  echo running watch tests
+  setup_standard_test_files
 
-# change stuff in the renamed directory
-rm srcs/oldname/subdir/subdir-files2
-echo stuff >> srcs/oldname/subdir/subdir-files3
-sleep 1
+  # add some files to the output directories to ensure they are removed
+  touch out1/project1/dir1/should-not-exist-out1-dir1
+  touch out2/project1/dir1/should-not-exist-out2-dir1
 
-ensure_match out3/subdir srcs/oldname/subdir
-diff out3/file srcs/oldname/file || die "files in root directory differ"
+  ../bin/mirror-directories -w -v -s 'srcs/*' -d out1 -d out2 &
+  watcher_pid=$!
+  sleep 1
 
+  echo making changes to srcs
+  # create new file
+  touch srcs/project2/dir/new-file
+  # remove some files
+  rm srcs/project1/root-a
+  rm srcs/project2/dir/files-g
+  # # alter a file
+  echo new-line >> srcs/project1/root-b
+  sleep 1
+
+  ensure_all_matches
+  kill $watcher_pid
+  watcher_pid=""
+}
+
+rename_tests() {
+  echo running rename tests
+  mkdir -p srcs/oldname/subdir
+  touch srcs/oldname/file
+  touch srcs/oldname/subdir/subdir-files{1,2,3}
+
+  ../bin/mirror-directories -v -s srcs/oldname/ -d out3
+  ensure_match out3/subdir srcs/oldname/subdir
+  diff out3/file srcs/oldname/file || die "files in root directory differ"
+
+  # echo running watch rename tests
+  ../bin/mirror-directories -w -v -s srcs/oldname/ -d out3 &
+  watcher_pid=$!
+  sleep 1
+
+  # change stuff in the renamed directory
+  rm srcs/oldname/subdir/subdir-files2
+  echo stuff >> srcs/oldname/subdir/subdir-files3
+  sleep 1
+
+  ensure_match out3/subdir srcs/oldname/subdir
+  diff out3/file srcs/oldname/file || die "files in root directory differ"
+}
+
+ensure_multi_content() {
+  local f1=srcs/$1/$2
+  local f2=out-multi/$2
+  diff srcs/$1/$2 out-multi/$2 || die "$f1 and $f2 should not differ"
+}
+
+setup_multi_rename_sources() {
+  mkdir -p srcs/{multi1,multi2}
+  echo multi1-only > srcs/multi1/multi1-only
+  echo multi2-only > srcs/multi2/multi2-only
+  echo multi1-blah > srcs/multi1/blah
+  echo multi2-blah > srcs/multi2/blah
+  rm -rf multi-out
+  mkdir multi-out
+}
+
+rename_tests_with_multiple_sources() {
+  echo running rename tests with multiple sources
+  setup_multi_rename_sources
+
+  ../bin/mirror-directories -v -m srcs/multi1/:srcs/multi2/:out-multi
+
+  ensure_multi_content multi1 multi1-only
+  ensure_multi_content multi2 multi2-only
+  ensure_multi_content multi2 blah
+}
+
+standard_tests
+standard_tests_with_m_arg
+watch_tests
+rename_tests
+rename_tests_with_multiple_sources
 echo all tests passed

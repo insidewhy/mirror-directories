@@ -15,7 +15,7 @@ async function doMain(): Promise<void> {
   let watch = false
   const srcDirs: string[] = []
   const destDirs: string[] = []
-  const mirrors: Array<[string, string]> = []
+  const mirrors: string[][] = []
   const options: Options = {}
 
   for (let i = 2; i < args.length; ++i) {
@@ -36,10 +36,10 @@ async function doMain(): Promise<void> {
       destDirs.push(...globbedDirs)
     } else if (arg === '-m' || arg === '--mirror') {
       const mirror = args[++i].split(':')
-      if (mirror.length !== 2) {
-        throw new Error(`Format for mirror should be src:dest but got ${args[i]}`)
+      if (mirror.length < 2) {
+        throw new Error(`There must be at least one colon when using -m but got: ${args[i]}`)
       }
-      mirrors.push(mirror as [string, string])
+      mirrors.push(mirror)
     } else if (arg === '-h' || arg === '--help') {
       console.log(args[1] + ' [-h] [-v] [-p] [-s <dir>] [-d <dir]')
       process.exit(0)
@@ -56,13 +56,22 @@ async function doMain(): Promise<void> {
         rename: srcDir.endsWith('/'),
       }),
     ),
-    ...mirrors.map(([srcDir, destDir]) =>
-      Object.freeze({
-        srcDirs: [srcDir],
-        destDirs: [destDir],
-        rename: srcDir.endsWith('/'),
-      }),
-    ),
+    ...mirrors.map((dirs) => {
+      const srcDirs = dirs.slice(0, -1)
+      const renames = srcDirs.filter((dir) => dir.endsWith('/'))
+      const rename = Boolean(renames.length)
+      if (rename && renames.length !== srcDirs.length) {
+        throw new Error(
+          'When using -m with a source directory with a trailing slash all or none of the source directories must have a trailing slash',
+        )
+      }
+
+      return Object.freeze({
+        srcDirs,
+        destDirs: dirs.slice(-1),
+        rename,
+      })
+    }),
   ]
 
   if (watch) {

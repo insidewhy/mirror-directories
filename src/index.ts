@@ -31,6 +31,20 @@ export interface Synchronisation {
 // each sync is a pair of source and destination
 export type Synchronisations = ReadonlyArray<Readonly<Synchronisation>>
 
+async function syncDir(
+  srcDir: string,
+  destDir: string,
+  rename: boolean,
+  keep: boolean,
+): Promise<void> {
+  const fullDestDir = rename ? destDir : join(destDir, basename(srcDir))
+
+  if (!keep) {
+    await emptyDir(fullDestDir)
+  }
+  await copy(srcDir, fullDestDir)
+}
+
 export async function mirrorDirectories(
   syncs: Synchronisations,
   options: Options = {},
@@ -39,25 +53,30 @@ export async function mirrorDirectories(
 
   // copy source directories into dest directories
   await Promise.all(
-    syncs.map(({ srcDirs, destDirs, rename }) => {
+    syncs.map(async ({ srcDirs, destDirs, rename }) => {
       if (options.verbose) {
         console.log('Synchronising %O -> %O', srcDirs, destDirs)
       }
 
-      return Promise.all(
-        srcDirs.map((srcDir) =>
-          Promise.all(
-            destDirs.map(async (destDir) => {
-              const fullDestDir = rename ? destDir : join(destDir, basename(srcDir))
+      if (rename) {
+        if (!options.keep) {
+          await Promise.all(destDirs.map((dir) => emptyDir(dir)))
+        }
 
-              if (!options.keep) {
-                await emptyDir(fullDestDir)
-              }
-              await copy(srcDir, fullDestDir)
-            }),
+        // do not parallelise, files in subsequent directories must override
+        // those in previous directories
+        for (const srcDir of srcDirs) {
+          await Promise.all(destDirs.map((destDir) => syncDir(srcDir, destDir, true, true)))
+        }
+      } else {
+        return Promise.all(
+          srcDirs.map((srcDir) =>
+            Promise.all(
+              destDirs.map((destDir) => syncDir(srcDir, destDir, false, Boolean(options.keep))),
+            ),
           ),
-        ),
-      )
+        )
+      }
     }),
   )
 }

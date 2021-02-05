@@ -48,6 +48,16 @@ The `-m` argument can be used to specify independent source/dest pairs.
 
 This will mirror `src` to `out/src` and the contents of the `friends` directory to the `enemies` directory.
 
+### Example 5
+
+The `-m` argument can be used to specify multiple source directories for a single dest directory. Either all of none of the source directories must have a trailing slash. When all source directories have a trailing slash, meaning all of them relate to rename watches, files in latter source directories will take precedence over those specified earlier.
+
+```bash
+% mirror-directories -m src1/:src2/:out
+```
+
+In this circumstance if both `src1/file` and `src2/file` exist then `out/file` will always mirror `src2/file`. If `-w` were used then any changes to `src1/file` would be ignored. Removing `src2/file` would lead to `out/file` being a mirror of `src1/file` until `src2/file` is recreated.
+
 ## API
 
 This library also exports an API:

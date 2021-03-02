@@ -40,8 +40,26 @@ async function doMain(): Promise<void> {
         throw new Error(`There must be at least one colon when using -m but got: ${args[i]}`)
       }
       mirrors.push(mirror)
+    } else if (arg === '-e' || arg === '--exclude') {
+      if (!options.exclude) {
+        options.exclude = []
+      }
+      options.exclude.push(args[++i])
     } else if (arg === '-h' || arg === '--help') {
-      console.log(args[1] + ' [-h] [-v] [-p] [-s <dir>] [-d <dir]')
+      console.log(args[1] + ' [arguments]')
+      console.log()
+      console.log('where arguments are')
+      console.log(' -h/--help           show this message')
+      console.log(' -v/--verbose        increase verbosity')
+      console.log(" -p/--watch-project  use watchman's watch-project option")
+      console.log(' -s/--source <dir>   set source directory to mirror from')
+      console.log(' -d/--dest <dir>     set destination directory to mirror to')
+      console.log(
+        ' -m/--mirror <dirs>  specify colon separated source directories followed by dest directory',
+      )
+      console.log(
+        ' -e/--exclude <dir>  exclude directory paths (relative to source directories) from mirror',
+      )
       process.exit(0)
     } else {
       throw new Error(`Unknown arg: ${arg}`)

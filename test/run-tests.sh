@@ -6,7 +6,10 @@ die() {
 }
 
 kill_watcher() {
-  [ -n "$watcher_pid" ] && kill $watcher_pid
+  if [ -n "$watcher_pid" ] ; then
+    kill $watcher_pid
+    unset watcher_pid
+  fi
 }
 trap kill_watcher exit
 
@@ -15,6 +18,10 @@ rm -rf srcs out*
 ensure_match() {
   [ -d $1 ] || die "output directory $1 was not created"
   diff -r $1 $2 || die "directories $1 and $2 differ"
+}
+
+ensure_path_does_not_exist() {
+  [ ! -e $1 ] || die "path $1 should not exist"
 }
 
 ensure_all_matches() {
@@ -97,8 +104,7 @@ watch_tests() {
   sleep 1
 
   ensure_all_matches
-  kill $watcher_pid
-  watcher_pid=""
+  kill_watcher
 }
 
 rename_tests() {
@@ -188,6 +194,38 @@ rename_tests_with_multiple_sources_watch() {
   echo newest-multi1-content > srcs/multi1/blah
   sleep 1
   ensure_multi_content multi1 blah
+  kill_watcher
+}
+
+setup_exclude_sources() {
+  mkdir -p srcs/project-ex/{include,exclude}
+  touch srcs/project-ex/{include,exclude}/something
+}
+
+exclude_tests() {
+  setup_exclude_sources
+  ../bin/mirror-directories -v -e exclude -m srcs/project-ex/:out-ex
+  rm -rf srcs/project-ex/exclude
+  ensure_match srcs/project-ex out-ex
+}
+
+exclude_tests_watch() {
+  setup_exclude_sources
+  ../bin/mirror-directories -w -v -e exclude -m srcs/project-ex/:out-ex &
+  watcher_pid=$!
+  sleep 1
+  ensure_match srcs/project-ex/include out-ex/include
+  ensure_path_does_not_exist out-ex/exclude
+
+  touch srcs/project-ex/exclude/other
+  touch srcs/project-ex/include/other
+  sleep 1
+  ensure_match srcs/project-ex/include out-ex/include
+  ensure_path_does_not_exist out-ex/exclude
+
+  kill_watcher
+  rm -rf srcs/project-ex/exclude
+  ensure_match srcs/project-ex out-ex
 }
 
 standard_tests
@@ -196,4 +234,6 @@ watch_tests
 rename_tests
 rename_tests_with_multiple_sources
 rename_tests_with_multiple_sources_watch
+exclude_tests
+exclude_tests_watch
 echo all tests passed

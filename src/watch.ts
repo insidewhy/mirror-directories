@@ -161,6 +161,19 @@ export async function watchDirectoriesForChangesAndMirror(
 
           const source = sync.rename ? name : join(basename(root), name)
 
+          if (options.exclude) {
+            if (
+              options.exclude.some(
+                (excludePath) => source.startsWith(`${excludePath}/`) || source === excludePath,
+              )
+            ) {
+              if (options.verbose) {
+                console.log('exclude %s due to exclude match', source)
+              }
+              return
+            }
+          }
+
           if (precedences) {
             const precedence = precedences.roots.indexOf(root)
             if (precedence === -1) {

@@ -15,6 +15,11 @@ export interface Options {
    * When true, do not empty files existing in the output directories before mirroring.
    */
   keep?: boolean
+
+  /**
+   * A list of directory names to exclude.
+   */
+  exclude?: string[]
 }
 
 export interface Synchronisation {
@@ -36,13 +41,26 @@ async function syncDir(
   destDir: string,
   rename: boolean,
   keep: boolean,
+  exclude?: string[],
 ): Promise<void> {
   const fullDestDir = rename ? destDir : join(destDir, basename(srcDir))
 
   if (!keep) {
     await emptyDir(fullDestDir)
   }
-  await copy(srcDir, fullDestDir)
+  if (exclude) {
+    await copy(srcDir, fullDestDir, {
+      filter: (source) => {
+        const relativeSource = source.substr(srcDir.length)
+        return !exclude.some(
+          (excludePath) =>
+            relativeSource === excludePath || relativeSource.startsWith(`${excludePath}/`),
+        )
+      },
+    })
+  } else {
+    await copy(srcDir, fullDestDir)
+  }
 }
 
 export async function mirrorDirectories(
@@ -66,13 +84,17 @@ export async function mirrorDirectories(
         // do not parallelise, files in subsequent directories must override
         // those in previous directories
         for (const srcDir of srcDirs) {
-          await Promise.all(destDirs.map((destDir) => syncDir(srcDir, destDir, true, true)))
+          await Promise.all(
+            destDirs.map((destDir) => syncDir(srcDir, destDir, true, true, options.exclude)),
+          )
         }
       } else {
         return Promise.all(
           srcDirs.map((srcDir) =>
             Promise.all(
-              destDirs.map((destDir) => syncDir(srcDir, destDir, false, Boolean(options.keep))),
+              destDirs.map((destDir) =>
+                syncDir(srcDir, destDir, false, Boolean(options.keep), options.exclude),
+              ),
             ),
           ),
         )

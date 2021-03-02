@@ -58,6 +58,16 @@ The `-m` argument can be used to specify multiple source directories for a singl
 
 In this circumstance if both `src1/file` and `src2/file` exist then `out/file` will always mirror `src2/file`. If `-w` were used then any changes to `src1/file` would be ignored. Removing `src2/file` would lead to `out/file` being a mirror of `src1/file` until `src2/file` is recreated.
 
+### Example 6
+
+The `-e` argument can be used to exclude directories
+
+```bash
+% mirror-directories -e blah -e hero/cat -m src:out -m friends/:enemies
+```
+
+This will mirror `src` to `out/src` and the contents of the `friends` directory to the `enemies` directory but will not mirror `src/blah` or `src/hero/cat`. If `src/blah` and/or `src/hero/cat` are directories then their contents would also be ignored.
+
 ## API
 
 This library also exports an API:

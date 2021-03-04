@@ -1,15 +1,9 @@
-import { Client } from 'fb-watchman'
+import cousinHarris from 'cousin-harris'
 import { existsSync } from 'fs'
 import { copy, unlink, emptyDir, realpath } from 'fs-extra'
 import { join, basename, dirname } from 'path'
 
 import type { Options, Synchronisations, Synchronisation } from '.'
-
-interface FileChange {
-  name: string
-  exists: boolean
-  type: 'f' | 'd'
-}
 
 interface CopyOperation {
   type: 'copy'
@@ -132,163 +126,110 @@ export async function watchDirectoriesForChangesAndMirror(
 
   const opQueue = new FileOperationQueue(options.verbose)
 
-  return new Promise((_, reject) => {
-    const client = new Client()
+  const sourceDirs = []
+  for (const sync of syncs) {
+    for (const sourceDir of sync.srcDirs) {
+      sourceDirs.push(sourceDir)
+    }
+  }
 
-    client.on('subscription', ({ root, files }) => {
-      if (!files) {
-        // watchman... why
-        return
-      }
+  return cousinHarris(
+    sourceDirs,
+    ({ root, path, removal, isDirectory }) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const { sync, precedences } = watchMap.get(root)!
 
-      files.forEach(({ name, exists, type }: FileChange) => {
-        const watch = watchMap.get(root)
-        if (!watch) {
-          console.warn('Unexpected watch root seen: %s', root)
-          return
+      if (!removal) {
+        if (options.verbose) {
+          console.log('file change: %s => %s to %O', root, path, sync.destDirs)
         }
-        const { sync, precedences } = watch
-        const isDirectory = type === 'd'
-        if (exists) {
-          if (isDirectory) {
-            // ignore directory changes
+        const source = sync.rename ? path : join(basename(root), path)
+
+        if (options.exclude) {
+          if (
+            options.exclude.some(
+              (excludePath) => source.startsWith(`${excludePath}/`) || source === excludePath,
+            )
+          ) {
+            if (options.verbose) {
+              console.log('exclude %s due to exclude match', source)
+            }
             return
           }
+        }
 
-          if (options.verbose) {
-            console.log('file change: %s => %s to %O', root, name, sync.destDirs, type)
+        if (precedences) {
+          const precedence = precedences.roots.indexOf(root)
+          if (precedence === -1) {
+            throw new Error(`root not found in precedence map: ${root}`)
           }
+          const existingPrecedence = precedences.map.get(source)
+          if (existingPrecedence !== undefined && precedence < existingPrecedence) {
+            if (options.verbose) {
+              console.log('skipping file copy of %s due to precedence', source)
+            }
+            return
+          } else {
+            precedences.map.set(source, precedence)
+          }
+        }
 
-          const source = sync.rename ? name : join(basename(root), name)
+        opQueue.push({
+          type: 'copy',
+          root: sync.rename ? root : dirname(root),
+          source,
+          destinations: sync.destDirs,
+        })
+      } else {
+        if (options.verbose) {
+          console.log(
+            '%s remove: %s from %O',
+            isDirectory ? 'directory' : 'file',
+            path,
+            sync.destDirs,
+          )
+        }
 
-          if (options.exclude) {
-            if (
-              options.exclude.some(
-                (excludePath) => source.startsWith(`${excludePath}/`) || source === excludePath,
-              )
-            ) {
+        const source = sync.rename ? path : join(basename(root), path)
+        if (precedences) {
+          const precedence = precedences.roots.indexOf(root)
+          if (precedence === -1) {
+            throw new Error(`root not found in precedence map: ${root}`)
+          }
+          const existingPrecedence = precedences.map.get(source)
+          if (existingPrecedence !== undefined) {
+            if (precedence < existingPrecedence) {
               if (options.verbose) {
-                console.log('exclude %s due to exclude match', source)
+                console.log('skipping file deletion of %s due to precedence', source)
               }
               return
             }
-          }
 
-          if (precedences) {
-            const precedence = precedences.roots.indexOf(root)
-            if (precedence === -1) {
-              throw new Error(`root not found in precedence map: ${root}`)
-            }
-            const existingPrecedence = precedences.map.get(source)
-            if (existingPrecedence !== undefined && precedence < existingPrecedence) {
-              if (options.verbose) {
-                console.log('skipping file copy of %s due to precedence', source)
-              }
-              return
-            } else {
-              precedences.map.set(source, precedence)
-            }
-          }
-
-          opQueue.push({
-            type: 'copy',
-            root: sync.rename ? root : dirname(root),
-            source,
-            destinations: sync.destDirs,
-          })
-        } else {
-          if (options.verbose) {
-            console.log(
-              '%s remove: %s from %O',
-              isDirectory ? 'directory' : 'file',
-              name,
-              sync.destDirs,
-            )
-          }
-
-          const source = sync.rename ? name : join(basename(root), name)
-          if (precedences) {
-            const precedence = precedences.roots.indexOf(root)
-            if (precedence === -1) {
-              throw new Error(`root not found in precedence map: ${root}`)
-            }
-            const existingPrecedence = precedences.map.get(source)
-            if (existingPrecedence !== undefined) {
-              if (precedence < existingPrecedence) {
-                if (options.verbose) {
-                  console.log('skipping file deletion of %s due to precedence', source)
-                }
+            for (let i = existingPrecedence - 1; i >= 0; --i) {
+              // existsSync :( but this situation is rare and if we go async then the
+              // ordering of operations will break leading to race conditions
+              if (existsSync(join(precedences.roots[i], source))) {
+                opQueue.push({
+                  type: 'copy',
+                  root: precedences.roots[i],
+                  source,
+                  destinations: sync.destDirs,
+                })
+                precedences.map.set(source, i)
                 return
               }
-
-              for (let i = existingPrecedence - 1; i >= 0; --i) {
-                // existsSync :( but this situation is rare and if we go async then the
-                // ordering of operations will break leading to race conditions
-                if (existsSync(join(precedences.roots[i], source))) {
-                  opQueue.push({
-                    type: 'copy',
-                    root: precedences.roots[i],
-                    source,
-                    destinations: sync.destDirs,
-                  })
-                  precedences.map.set(source, i)
-                  return
-                }
-              }
-              precedences.map.delete(source)
             }
+            precedences.map.delete(source)
           }
-
-          opQueue.push({
-            type: 'remove',
-            source,
-            destinations: sync.destDirs,
-          })
         }
-      })
-    })
 
-    client.capabilityCheck({ optional: [], required: ['relative_root'] }, async (error) => {
-      const endAndReject = (message: string) => {
-        client.end()
-        reject(new Error(message))
+        opQueue.push({
+          type: 'remove',
+          source,
+          destinations: sync.destDirs,
+        })
       }
-
-      if (error) {
-        return endAndReject(`Could not confirm capabilities: ${error.message}`)
-      }
-
-      syncs.forEach(({ srcDirs }) =>
-        Promise.all(
-          srcDirs.map(async (srcDir) => {
-            const fullSrcDir = await realpath(srcDir)
-            client.command(
-              [options.watchProject ? 'watch-project' : 'watch', fullSrcDir],
-              (error, watchResp) => {
-                if (error) {
-                  return endAndReject(`Could not initiate watch: ${error.message}`)
-                }
-
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const sub: any = {
-                  expression: ['allof', ['match', '*']],
-                  fields: ['name', 'exists', 'type'],
-                }
-                const relativePath = watchResp.relative_path
-                if (relativePath) {
-                  sub.relative_root = relativePath
-                }
-
-                client.command(['subscribe', watchResp.watch, 'sub-name', sub], (error) => {
-                  if (error) {
-                    return endAndReject(`Could not subscribe to changes: ${error.message}`)
-                  }
-                })
-              },
-            )
-          }),
-        ),
-      )
-    })
-  })
+    },
+    { watchProject: options.watchProject },
+  )
 }

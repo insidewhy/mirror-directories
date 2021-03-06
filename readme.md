@@ -91,7 +91,7 @@ const stopWatching = await watchDirectoriesForChangesAndMirror(
     // mirrors `src4` to `dest4` and `dest5` instead of
     // `dest4/src4` and `dest5/src4`
     rename: true,
-  }
+  },
 )
 process.on('exit', stopWatching())
 ```

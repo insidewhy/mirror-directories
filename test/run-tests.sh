@@ -129,6 +129,7 @@ rename_tests() {
 
   ensure_match out3/subdir srcs/oldname/subdir
   diff out3/file srcs/oldname/file || die "files in root directory differ"
+  kill_watcher
 }
 
 ensure_multi_content() {

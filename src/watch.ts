@@ -88,7 +88,7 @@ interface Watch {
 export async function watchDirectoriesForChangesAndMirror(
   syncs: Synchronisations,
   options: Options = {},
-): Promise<never> {
+): Promise<() => Promise<void>> {
   // map of full directory source to output directories
   const watchMap: Map<string, Watch> = new Map()
 

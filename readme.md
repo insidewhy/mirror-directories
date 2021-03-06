@@ -81,13 +81,17 @@ mirrorDirectories([
   { srcDirs: ['src2', 'src3'], destDirs: ['dest2', 'dest3'] },
 ])
 
-watchDirectoriesForChangesAndMirror([{ srcDirs: ['src4'], destDirs: ['dest4', 'dest5'] }], {
-  // keep existing contents in destination directories
-  keep: true,
-  // use watchman's "watch-project" command rather than "watch"
-  watchProject: true,
-  // mirrors `src4` to `dest4` and `dest5` instead of
-  // `dest4/src4` and `dest5/src4`
-  rename: true,
-})
+const stopWatching = await watchDirectoriesForChangesAndMirror(
+  [{ srcDirs: ['src4'], destDirs: ['dest4', 'dest5'] }],
+  {
+    // keep existing contents in destination directories
+    keep: true,
+    // use watchman's "watch-project" command rather than "watch"
+    watchProject: true,
+    // mirrors `src4` to `dest4` and `dest5` instead of
+    // `dest4/src4` and `dest5/src4`
+    rename: true,
+  }
+)
+process.on('exit', stopWatching())
 ```

@@ -96,9 +96,9 @@ async function doMain(): Promise<void> {
     // the watcher emits the current state first so there's no need to run
     // mirrorDirectories first
     const stopWatching = await watchDirectoriesForChangesAndMirror(syncs, options)
-    process.on('exit', () => {
-      stopWatching()
-    })
+    process.on('exit', stopWatching)
+    process.on('SIGTERM', stopWatching)
+    process.on('SIGINT', stopWatching)
   } else {
     await mirrorDirectories(syncs, options)
   }

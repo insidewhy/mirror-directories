@@ -359,10 +359,10 @@ concat-map@0.0.1:
   resolved "https://registry.yarnpkg.com/concat-map/-/concat-map-0.0.1.tgz#d8a96bd77fd68df7793a73036a3ba0d5405d477b"
   integrity sha1-2Klr13/Wjfd5OnMDajug1UBdR3s=
 
-cousin-harris@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/cousin-harris/-/cousin-harris-2.0.1.tgz#81d42dda808758fbb14116ef22d5d9eacecd6262"
-  integrity sha512-QtinZGwSbLsMSHmpheSofgJSMXKcENH90yz2fH3L3hWIDoWZyK1TnMHIg5FtFDUDvmKQnYSzmBk5n28cyVuAmA==
+cousin-harris@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/cousin-harris/-/cousin-harris-2.0.2.tgz#4b5dd3b05cb50dec4d7bfbbce6a0cb911ada67db"
+  integrity sha512-2QuWUk9i4jJRVAH2Sf9Ub6t9ffFFRkr7bx2VQ6BAXu8hnHE6rACKBm1Q3sbEw67EgaX4a3X6vHv3isKNd5Rr4w==
   dependencies:
     fb-watchman "^2.0.1"
     fs-extra "^9.0.0"

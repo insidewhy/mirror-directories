@@ -206,8 +206,11 @@ setup_exclude_sources() {
 exclude_tests() {
   setup_exclude_sources
   ../bin/mirror-directories -v -e exclude -m srcs/project-ex/:out-ex
+  ../bin/mirror-directories -v -e exclude -m srcs/project-ex:out-ex2
   rm -rf srcs/project-ex/exclude
   ensure_match srcs/project-ex out-ex
+  ensure_match srcs/project-ex out-ex2/project-ex
+
 }
 
 exclude_tests_watch() {
@@ -227,6 +230,23 @@ exclude_tests_watch() {
   kill_watcher
   rm -rf srcs/project-ex/exclude
   ensure_match srcs/project-ex out-ex
+
+  setup_exclude_sources
+  ../bin/mirror-directories -w -v -e exclude -m srcs/project-ex:out-ex2 &
+  watcher_pid=$!
+  sleep 1
+  ensure_match srcs/project-ex/include out-ex2/project-ex/include
+  ensure_path_does_not_exist out-ex2/project-ex/exclude
+
+  touch srcs/project-ex/exclude/other
+  touch srcs/project-ex/include/other
+  sleep 1
+  ensure_match srcs/project-ex/include out-ex2/project-ex/include
+  ensure_path_does_not_exist out-ex2/project-ex/exclude
+
+  kill_watcher
+  rm -rf srcs/project-ex/exclude
+  ensure_match srcs/project-ex out-ex2/project-ex
 }
 
 standard_tests

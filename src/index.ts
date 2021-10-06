@@ -51,7 +51,7 @@ async function syncDir(
   if (exclude) {
     await copy(srcDir, fullDestDir, {
       filter: (source) => {
-        const relativeSource = source.substr(srcDir.length)
+        const relativeSource = source.substr(srcDir.length).replace(/^\//, '')
         return !exclude.some(
           (excludePath) =>
             relativeSource === excludePath || relativeSource.startsWith(`${excludePath}/`),

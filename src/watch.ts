@@ -148,7 +148,7 @@ export async function watchDirectoriesForChangesAndMirror(
         if (options.exclude) {
           if (
             options.exclude.some(
-              (excludePath) => source.startsWith(`${excludePath}/`) || source === excludePath,
+              (excludePath) => path.startsWith(`${excludePath}/`) || path === excludePath,
             )
           ) {
             if (options.verbose) {

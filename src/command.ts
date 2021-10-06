@@ -78,17 +78,24 @@ async function doMain(): Promise<void> {
       const srcDirs = dirs.slice(0, -1)
       const renames = srcDirs.filter((dir) => dir.endsWith('/'))
       const rename = Boolean(renames.length)
-      if (rename && renames.length !== srcDirs.length) {
-        throw new Error(
-          'When using -m with a source directory with a trailing slash all or none of the source directories must have a trailing slash',
-        )
+      if (rename) {
+        if (renames.length !== srcDirs.length) {
+          throw new Error(
+            'When using -m with a source directory with a trailing slash all or none of the source directories must have a trailing slash',
+          )
+        }
+        return Object.freeze({
+          srcDirs: srcDirs.map((srcDir) => srcDir.slice(0, -1)),
+          destDirs: dirs.slice(-1),
+          rename,
+        })
+      } else {
+        return Object.freeze({
+          srcDirs,
+          destDirs: dirs.slice(-1),
+          rename,
+        })
       }
-
-      return Object.freeze({
-        srcDirs,
-        destDirs: dirs.slice(-1),
-        rename,
-      })
     }),
   ]
 

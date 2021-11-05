@@ -1,6 +1,6 @@
 {
   "name": "mirror-directories",
-  "version": "4.0.2",
+  "version": "4.0.3",
   "description": "mirror multiple source directories to multiple target destinations",
   "author": "insidewhy <github@chilon.net>",
   "license": "ISC",
@@ -33,7 +33,7 @@
     "validate": "yarn test && yarn lint && yarn validate-prettiness"
   },
   "dependencies": {
-    "cousin-harris": "^2.0.2",
+    "cousin-harris": "^3.0.0",
     "fs-extra": "^9.0.0",
     "glob": "^7.1.4"
   },

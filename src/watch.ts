@@ -1,4 +1,4 @@
-import cousinHarris from 'cousin-harris'
+import cousinHarris, { CousinHarrisWatcher } from 'cousin-harris'
 import { existsSync } from 'fs'
 import { copy, unlink, emptyDir, realpath } from 'fs-extra'
 import { join, basename, dirname } from 'path'
@@ -88,7 +88,7 @@ interface Watch {
 export async function watchDirectoriesForChangesAndMirror(
   syncs: Synchronisations,
   options: Options = {},
-): Promise<() => Promise<void>> {
+): Promise<CousinHarrisWatcher> {
   // map of full directory source to output directories
   const watchMap: Map<string, Watch> = new Map()
 

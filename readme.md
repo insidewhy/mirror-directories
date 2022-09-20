@@ -68,6 +68,16 @@ The `-e` argument can be used to exclude directories
 
 This will mirror `src` to `out/src` and the contents of the `friends` directory to the `enemies` directory but will not mirror `src/blah` or `src/hero/cat`. If `src/blah` and/or `src/hero/cat` are directories then their contents would also be ignored.
 
+### Example 7
+
+The `-P` argument can be used to exclude paths matching a pattern (using `micromatch` patterns internally with th `matchBase` option set). It applies to each component in the entire source path (relative to the source directory), so `ex*` would exclude all files and directories within the `dir/exclude` directory and the file `dir/include/exclude`.
+
+```bash
+% mirror-directories -P '*d' -m src:out
+```
+
+This will mirror `src` to `out/src` and will not copy any paths ending in the letter `d`.
+
 ## API
 
 This library also exports an API:

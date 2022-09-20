@@ -1,4 +1,5 @@
 import { copy, emptyDir } from 'fs-extra'
+import { Minimatch, IMinimatch } from 'minimatch'
 import { join, basename } from 'path'
 
 export interface Options {
@@ -20,6 +21,11 @@ export interface Options {
    * A list of directory names to exclude.
    */
   exclude?: string[]
+
+  /**
+   * A list of minimatch patterns to exclude
+   */
+  excludePatterns?: string[]
 }
 
 export interface Synchronisation {
@@ -41,20 +47,23 @@ async function syncDir(
   destDir: string,
   rename: boolean,
   keep: boolean,
-  exclude?: string[],
+  exclude: string[] | undefined,
+  minimatchers: IMinimatch[] | undefined,
 ): Promise<void> {
   const fullDestDir = rename ? destDir : join(destDir, basename(srcDir))
 
   if (!keep) {
     await emptyDir(fullDestDir)
   }
-  if (exclude) {
+  if (exclude || minimatchers) {
     await copy(srcDir, fullDestDir, {
       filter: (source) => {
         const relativeSource = source.substr(srcDir.length + 1)
-        return !exclude.some(
-          (excludePath) =>
-            relativeSource === excludePath || relativeSource.startsWith(`${excludePath}/`),
+        return !(
+          exclude?.some(
+            (excludePath) =>
+              relativeSource === excludePath || relativeSource.startsWith(`${excludePath}/`),
+          ) || minimatchers?.some((minimatcher) => minimatcher.match(relativeSource))
         )
       },
     })
@@ -68,6 +77,10 @@ export async function mirrorDirectories(
   options: Options = {},
 ): Promise<void> {
   if (!syncs.length) throw new Error('Must supply at least one copy')
+
+  const minimatchers = options.excludePatterns?.map(
+    (pattern) => new Minimatch(pattern, { matchBase: true }),
+  )
 
   // copy source directories into dest directories
   await Promise.all(
@@ -85,7 +98,9 @@ export async function mirrorDirectories(
         // those in previous directories
         for (const srcDir of srcDirs) {
           await Promise.all(
-            destDirs.map((destDir) => syncDir(srcDir, destDir, true, true, options.exclude)),
+            destDirs.map((destDir) =>
+              syncDir(srcDir, destDir, true, true, options.exclude, minimatchers),
+            ),
           )
         }
       } else {
@@ -93,7 +108,14 @@ export async function mirrorDirectories(
           srcDirs.map((srcDir) =>
             Promise.all(
               destDirs.map((destDir) =>
-                syncDir(srcDir, destDir, false, Boolean(options.keep), options.exclude),
+                syncDir(
+                  srcDir,
+                  destDir,
+                  false,
+                  Boolean(options.keep),
+                  options.exclude,
+                  minimatchers,
+                ),
               ),
             ),
           ),

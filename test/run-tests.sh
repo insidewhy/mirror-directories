@@ -24,6 +24,10 @@ ensure_path_does_not_exist() {
   [ ! -e $1 ] || die "path $1 should not exist"
 }
 
+ensure_path_exists() {
+  [ -e $1 ] || die "path $1 should exist"
+}
+
 ensure_all_matches() {
   ensure_match out1/project1 srcs/project1
   ensure_match out1/project2 srcs/project2
@@ -210,11 +214,11 @@ exclude_tests() {
   rm -rf srcs/project-ex/exclude
   ensure_match srcs/project-ex out-ex
   ensure_match srcs/project-ex out-ex2/project-ex
-
 }
 
 exclude_tests_watch() {
   setup_exclude_sources
+  rm -rf out*
   ../bin/mirror-directories -w -v -e exclude -m srcs/project-ex/:out-ex &
   watcher_pid=$!
   sleep 1
@@ -231,7 +235,6 @@ exclude_tests_watch() {
   rm -rf srcs/project-ex/exclude
   ensure_match srcs/project-ex out-ex
 
-  setup_exclude_sources
   ../bin/mirror-directories -w -v -e exclude -m srcs/project-ex:out-ex2 &
   watcher_pid=$!
   sleep 1
@@ -249,6 +252,58 @@ exclude_tests_watch() {
   ensure_match srcs/project-ex out-ex2/project-ex
 }
 
+setup_exclude_pattern_sources() {
+  mkdir -p srcs/project-ex-p/{naughty,good}
+  touch srcs/project-ex-p/naughty/good
+  touch srcs/project-ex-p/good/{good,naughty}
+}
+
+exclude_pattern_tests() {
+  setup_exclude_pattern_sources
+  rm -rf out*
+  ../bin/mirror-directories -v -P 'naught*' -m srcs/project-ex-p/:out-ex-p
+  ensure_path_exists out-ex-p/good/good
+  ensure_path_does_not_exist out-ex-p/naughty/good
+  ensure_path_does_not_exist out-ex-p/good/naughty
+
+  ../bin/mirror-directories -v -P 'naught*' -m srcs/project-ex-p:out-ex2-p
+  ensure_path_exists out-ex2-p/project-ex-p/good/good
+  ensure_path_does_not_exist out-ex2-p/project-ex-p/naughty/good
+  ensure_path_does_not_exist out-ex2-p/project-ex-p/good/naughty
+}
+
+exclude_pattern_tests_watch() {
+  setup_exclude_pattern_sources
+  rm -rf out*
+  ../bin/mirror-directories -w -v -P 'naught*' -m srcs/project-ex-p/:out-ex-p &
+  watcher_pid=$!
+  sleep 1
+  ensure_path_exists out-ex-p/good/good
+  ensure_path_does_not_exist out-ex-p/naughty/good
+  ensure_path_does_not_exist out-ex-p/good/naughty
+  touch srcs/project-ex-p/good/{good,naughty}
+  touch srcs/project-ex-p/naughty/good
+  sleep 1
+  ensure_path_exists out-ex-p/good/good
+  ensure_path_does_not_exist out-ex-p/naughty/good
+  ensure_path_does_not_exist out-ex-p/good/naughty
+  kill_watcher
+
+  ../bin/mirror-directories -w -v -P 'naught*' -m srcs/project-ex-p:out-ex2-p &
+  watcher_pid=$!
+  sleep 1
+  ensure_path_exists out-ex2-p/project-ex-p/good/good
+  ensure_path_does_not_exist out-ex2-p/project-ex-p/naughty/good
+  ensure_path_does_not_exist out-ex2-p/project-ex-p/good/naughty
+  touch srcs/project-ex-p/good/{good,naughty}
+  touch srcs/project-ex-p/naughty/good
+  sleep 1
+  ensure_path_exists out-ex-p/good/good
+  ensure_path_does_not_exist out-ex-p/naughty/good
+  ensure_path_does_not_exist out-ex-p/good/naughty
+  kill_watcher
+}
+
 standard_tests
 standard_tests_with_m_arg
 watch_tests
@@ -257,4 +312,6 @@ rename_tests_with_multiple_sources
 rename_tests_with_multiple_sources_watch
 exclude_tests
 exclude_tests_watch
+exclude_pattern_tests
+exclude_pattern_tests_watch
 echo all tests passed

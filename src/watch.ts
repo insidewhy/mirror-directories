@@ -1,7 +1,8 @@
 import cousinHarris, { CousinHarrisWatcher } from 'cousin-harris'
 import { existsSync } from 'fs'
 import { copy, unlink, emptyDir, realpath } from 'fs-extra'
-import { join, basename, dirname } from 'path'
+import { Minimatch } from 'minimatch'
+import { join, basename, dirname, sep as pathSep } from 'path'
 
 import type { Options, Synchronisations, Synchronisation } from '.'
 
@@ -133,6 +134,10 @@ export async function watchDirectoriesForChangesAndMirror(
     }
   }
 
+  const minimatchers = options.excludePatterns?.map(
+    (pattern) => new Minimatch(pattern, { matchBase: true }),
+  )
+
   return cousinHarris(
     sourceDirs,
     ({ root, path, removal, isDirectory }) => {
@@ -153,6 +158,20 @@ export async function watchDirectoriesForChangesAndMirror(
           ) {
             if (options.verbose) {
               console.log('exclude %s due to exclude match', source)
+            }
+            return
+          }
+        }
+
+        if (minimatchers) {
+          const pathComponents = path.split(pathSep)
+          const paths = pathComponents.map((pathComponent, idx) =>
+            pathComponents.slice(0, idx).concat(pathComponent).join('/'),
+          )
+
+          if (minimatchers.some((minimatcher) => paths.some((path) => minimatcher.match(path)))) {
+            if (options.verbose) {
+              console.log('exclude %s due to exclude pattern match', source)
             }
             return
           }

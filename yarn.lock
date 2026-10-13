@@ -305,10 +305,10 @@ braces@^3.0.1, braces@^3.0.2:
   dependencies:
     fill-range "^7.0.1"
 
-bser@2.1.1:
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/bser/-/bser-2.1.1.tgz#e6787da20ece9d07998533cfd9de6f5c38f4bc05"
-  integrity sha512-gQxTNE/GAfIIrmHLUE3oJyp5FO6HRBfhjnw4/wMmA63ZGDJnWBmgY/lyQBpnDUkGmAhbSe39tx2d/iTOAfglwQ==
+bser@2.1.2:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/bser/-/bser-2.1.2.tgz#3052372d49a1bc2a25e68c267697af5e823e147a"
+  integrity sha512-V2o8YS2EhrKMO9AumnkK0ynynfFlsajpYupwq7S46H5mhcanwxDkNTw3K67wPIcKTH1ffkA4vhMOtAc7gRmPZw==
   dependencies:
     node-int64 "^0.4.0"
 
@@ -372,9 +372,9 @@ concat-map@0.0.1:
   integrity sha1-2Klr13/Wjfd5OnMDajug1UBdR3s=
 
 cousin-harris@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/cousin-harris/-/cousin-harris-3.0.0.tgz#5a64ed428eebac42655fcac8954a26763fccc074"
-  integrity sha512-3NsTr4tYwH9IAxdlRzYMVsUbqcp4waF46oQLZSKrGfi5AJKhrJKESjU9jq6KAFgtKeNJvVLySeKtNMnMdPASkA==
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/cousin-harris/-/cousin-harris-3.0.1.tgz#8a79d982ecdf36dfd59e7c25b8269227d8131a11"
+  integrity sha512-9Ji4+g1mlmtbA9sYKqumRBBxPRCeayqCOS9gul2iD9PzTAVPY8oP++o0X4Sn4AktMHDXiQ52sryD+OBqdbqdoQ==
   dependencies:
     fb-watchman "^2.0.1"
     fs-extra "^9.0.0"
@@ -636,11 +636,11 @@ fastq@^1.6.0:
     reusify "^1.0.4"
 
 fb-watchman@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/fb-watchman/-/fb-watchman-2.0.1.tgz#fc84fb39d2709cf3ff6d743706157bb5708a8a85"
-  integrity sha512-DkPJKQeY6kKwmuMretBhr7G6Vodr7bFwDYTXIkfG1gjvNpaxBTQV3PbXg6bR1c1UP4jPOX0jHUbbHANL9vRjVg==
+  version "2.0.4"
+  resolved "https://registry.yarnpkg.com/fb-watchman/-/fb-watchman-2.0.4.tgz#2227759ee352e8371b9de30ceda7633ce65ca3be"
+  integrity sha512-tGQtaoYisPDriJBN0mT5yZSyNETnJGA1gTYxaVRAE5KUO3LI9kPUc9WIu8JXcxaIci+faIKlzXqXyPgrmubtBQ==
   dependencies:
-    bser "2.1.1"
+    bser "2.1.2"
 
 file-entry-cache@^6.0.1:
   version "6.0.1"
@@ -979,7 +979,7 @@ natural-compare@^1.4.0:
 node-int64@^0.4.0:
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/node-int64/-/node-int64-0.4.0.tgz#87a9065cdb355d3182d8f94ce11188b825c68a3b"
-  integrity sha1-h6kGXNs1XTGC2PlM4RGIuCXGijs=
+  integrity sha512-O5lz91xSOeoXP6DulyHfllpq+Eg00MWitZIbtPfoSEvqIHdl5gfcY6hYzDWnj0qD5tz52PI08u9qUvSVeUBeHw==
 
 npm-run-path@^4.0.0:
   version "4.0.1"
